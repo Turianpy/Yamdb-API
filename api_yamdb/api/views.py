@@ -13,7 +13,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     permission_classes = []
     filter_backends = (DjangoFilterBackend, )
-    filterset_fields = ('category__slug', 'genres__slug', 'name', 'year')
+    filterset_fields = ('category__slug', 'genre__slug', 'name', 'year')
 
 
 class GenreViewSet(CreateListDelVS):

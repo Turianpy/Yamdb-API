@@ -31,6 +31,7 @@ class Title(models.Model):
         Category, related_name='titles',
         on_delete=models.SET_NULL, null=True
     )
+    genre = models.ManyToManyField(Genre, through='GenreTitle')
     name = models.CharField(max_length=256)
     year = models.PositiveSmallIntegerField(validators=[year_regex, ])
     description = models.CharField()
