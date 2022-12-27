@@ -91,3 +91,12 @@ class Command(BaseCommand):
                     text=row['text'],
                     pub_date=datetime.fromisoformat(row['pub_date'])
                 )
+
+
+def main():
+    command = Command()
+    command.handle()
+
+
+if __name__ == '__main__':
+    main()
