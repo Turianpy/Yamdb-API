@@ -5,7 +5,7 @@ from api.models import Title, User
 
 class Review(models.Model):
     def validate_interval(value):
-        if value <= 1 or value >= 10:
+        if not 10 >= value >= 1:
             raise ValidationError(
                 ('%(value)s Score must be between 0 and 10.'),
                 params={'value': value},
@@ -21,7 +21,7 @@ class Review(models.Model):
         related_name='reviews'
     )
     text = models.TextField()
-    scrore = models.IntegerField(
+    score = models.IntegerField(
         validators=[validate_interval]
     )
     pub_date = models.DateTimeField(auto_now_add=True)
