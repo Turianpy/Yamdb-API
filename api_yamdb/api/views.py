@@ -1,5 +1,5 @@
-from rest_framework import filters, viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, filters
+from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Category, Genre, Title
 from .serializers import CategorySerializer, GenreSerializer, TitleSerializer
@@ -12,6 +12,8 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
 
     permission_classes = []
+    filter_backends = (DjangoFilterBackend, )
+    filterset_fields = ('category__slug', 'genres__slug', 'name', 'year')
 
 
 class GenreViewSet(CreateListDelVS):
@@ -20,6 +22,8 @@ class GenreViewSet(CreateListDelVS):
     queryset = Genre.objects.all()
 
     permission_classes = []
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
 
 
 class CategoryViewSet(CreateListDelVS):
@@ -28,3 +32,5 @@ class CategoryViewSet(CreateListDelVS):
     queryset = Category.objects.all()
 
     permission_classes = []
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
