@@ -1,12 +1,10 @@
-from django.db import models
-from rest_framework.exceptions import ValidationError
-from users.models import User
+from datetime import datetime
 
 from django.core.validators import RegexValidator
 from django.db import models
-from datetime import datetime
+from django.db.models import Avg
 from rest_framework.validators import ValidationError
-
+from users.models import User
 
 year_regex = RegexValidator(
     r'^\d{4}$',
@@ -30,7 +28,7 @@ class Category(models.Model):
         return self.name
 
 
-class Title(models.Model): 
+class Title(models.Model):
 
     category = models.ForeignKey(
         Category, related_name='titles',
@@ -39,7 +37,17 @@ class Title(models.Model):
     genre = models.ManyToManyField(Genre, through='GenreTitle')
     name = models.CharField(max_length=256)
     year = models.PositiveSmallIntegerField(validators=[year_regex, ])
-    description = models.CharField(max_length=256)
+    description = models.CharField(max_length=1000)
+    rating = models.PositiveSmallIntegerField(null=True, blank=True)
+
+    @property
+    def get_rating(self):
+        ratings = self.reviews.all()
+        return ratings.aggregate(Avg('score'))['score__avg']
+
+    def save(self, *args, **kwargs):
+        self.rating = self.get_rating
+        return super(Title, self).save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f'{self.category.name} {self.name}'
@@ -61,7 +69,7 @@ class GenreTitle(models.Model):
 
 
 class Review(models.Model):
-    def validate_interval(value):
+    def validate_interval(self, value):
         if not 10 >= value >= 1:
             raise ValidationError(
                 ('%(value)s Score must be between 0 and 10.'),
