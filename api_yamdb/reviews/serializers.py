@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from rest_framework.relations import SlugRelatedField
-from reviews.models import Review, Comment
+from reviews.models import Comment, Review
+
 
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
