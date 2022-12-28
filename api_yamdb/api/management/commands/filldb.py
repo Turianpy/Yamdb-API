@@ -1,10 +1,9 @@
-import csv
 import contextlib
+import csv
 from datetime import datetime
 
+from api.models import Category, Genre, GenreTitle, Title, User
 from django.core.management import BaseCommand
-
-from api.models import Category, Genre, Title, GenreTitle, User
 from reviews.models import Comment, Review
 
 
