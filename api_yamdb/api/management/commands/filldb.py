@@ -87,9 +87,7 @@ class Command(BaseCommand):
             for row in reviews:
                 Review.objects.get_or_create(
                     id=int(row['id']),
-                    title_id=get_object_or_404(
-                        Title,
-                        id=int(row['title_id'])),
+                    title_id=int(row['title_id']),
                     text=row['text'],
                     author=get_object_or_404(
                         User,
@@ -101,6 +99,9 @@ class Command(BaseCommand):
             for row in comments:
                 Comment.objects.get_or_create(
                     id=int(row['id']),
+                    review=get_object_or_404(
+                        Review,
+                        id=int(row['review_id'])),
                     author=get_object_or_404(
                         User,
                         id=int(row['author'])),
