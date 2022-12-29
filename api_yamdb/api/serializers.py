@@ -76,8 +76,6 @@ class GetTokenSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         user = get_object_or_404(User, username=data['username'])
-        print(user.confirmation_code)
         if data['confirmation_code'] != user.confirmation_code:
             raise ValidationError('Неверный код подтверждения')
-        print('returning data')
         return data
