@@ -23,6 +23,8 @@ class User(AbstractUser):
         default='user'
     )
 
+    confirmation_code = models.CharField(max_length=10, blank=True, null=True)
+
     @property
     def is_admin(self):
         """Is the user a member of staff?."""
