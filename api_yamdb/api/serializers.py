@@ -1,6 +1,5 @@
 from django.db.models import Avg
 from rest_framework import serializers
-from django.contrib.auth.tokens import default_token_generator
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 
@@ -77,7 +76,8 @@ class GetTokenSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         user = get_object_or_404(User, username=data['username'])
-        confirmation_code = default_token_generator.make_token(user)
-        if str(confirmation_code) != data['confirmation_code']:
+        print(user.confirmation_code)
+        if data['confirmation_code'] != user.confirmation_code:
             raise ValidationError('Неверный код подтверждения')
+        print('returning data')
         return data

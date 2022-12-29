@@ -14,13 +14,15 @@ from .viewsets import CreateListDelVS
 from .serializers import SignUpSerializer, GetTokenSerializer
 from users.models import User
 
+from .permissions import IsAdminOrReadOnly
+
 
 class TitleViewSet(viewsets.ModelViewSet):
 
     serializer_class = TitleSerializer
     queryset = Title.objects.all()
 
-    permission_classes = []
+    permission_classes = [IsAdminOrReadOnly]
     filter_backends = (DjangoFilterBackend, )
     filterset_fields = ('category__slug', 'genre__slug', 'name', 'year')
 
@@ -30,7 +32,7 @@ class GenreViewSet(CreateListDelVS):
     serializer_class = GenreSerializer
     queryset = Genre.objects.all()
 
-    permission_classes = []
+    permission_classes = [IsAdminOrReadOnly]
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
@@ -40,7 +42,7 @@ class CategoryViewSet(CreateListDelVS):
     serializer_class = CategorySerializer
     queryset = Category.objects.all()
 
-    permission_classes = []
+    permission_classes = [IsAdminOrReadOnly]
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
@@ -51,12 +53,15 @@ def send_confirmation_code(request):
     serializer = SignUpSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     email = serializer.validated_data.get('email')
+    username = serializer.validated_data.get('username')
     if not User.objects.filter(email=email).exists():
         User.objects.create(
-            username=email, email=email
+            username=username, email=email
         )
     user = User.objects.filter(email=email).first()
     confirmation_code = default_token_generator.make_token(user)
+    user.confirmation_code = confirmation_code
+    user.save()
     send_mail(
         'Код подтверждения Yamdb',
         f'Ваш код подтверждения: {confirmation_code}',
@@ -83,10 +88,15 @@ def get_tokens_for_user(user):
 def get_token(request):
     serializer = GetTokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
+    print(serializer.is_valid())
     user = get_object_or_404(User, username=request.data['username'])
+    print('got user')
     confirmation_code = request.data['confirmation_code']
+    print('got conf code')
+    print(default_token_generator.check_token(user, confirmation_code))
     if default_token_generator.check_token(user, confirmation_code):
         token = get_tokens_for_user(user)
+        print(token)
         response = {'token': str(token['access'])}
         return Response(response, status=status.HTTP_200_OK)
     return Response(
