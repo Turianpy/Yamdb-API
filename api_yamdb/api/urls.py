@@ -3,7 +3,6 @@ from rest_framework import routers
 from reviews.views import CommentViewSet, ReviewViewSet
 
 from . import views
-from .views import APISignup
 
 app_name = 'api'
 
@@ -23,6 +22,7 @@ v1_router.register(
 )
 
 urlpatterns = [
-    path('v1/auth/signup/', APISignup.as_view(), name='signup'),
+    path('v1/auth/signup/', views.send_confirmation_code),
+    path('v1/auth/token/', views.get_token),
     path('v1/', include(v1_router.urls)),
 ]
