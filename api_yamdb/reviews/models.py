@@ -29,7 +29,6 @@ class Category(models.Model):
 
 
 class Title(models.Model):
-
     category = models.ForeignKey(
         Category, related_name='titles',
         on_delete=models.SET_NULL, null=True
@@ -69,7 +68,7 @@ class GenreTitle(models.Model):
 
 
 class Review(models.Model):
-    def validate_interval(self, value):
+    def validate_interval(value):
         if not 10 >= value >= 1:
             raise ValidationError(
                 ('%(value)s Score must be between 0 and 10.'),
@@ -86,9 +85,7 @@ class Review(models.Model):
         related_name='reviews'
     )
     text = models.TextField()
-    score = models.IntegerField(
-        validators=[validate_interval]
-    )
+    score = models.IntegerField(validators=[validate_interval])
     pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -13,13 +13,14 @@ class TitleSerializer(serializers.ModelSerializer):
 
     genre = serializers.SlugRelatedField(
         slug_field='slug',
+        many=True,
         queryset=Genre.objects.all(),
         required=True
     )
     rating = serializers.SerializerMethodField(read_only=True,)
 
     def get_rating(self, obj):
-        ratings = Review.filter(title_id=obj.title_id)
+        ratings = Review.objects.filter(title_id=obj.id)
         return ratings.aggregate(Avg('score'))['score__avg']
 
     class Meta:

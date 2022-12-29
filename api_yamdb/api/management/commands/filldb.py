@@ -93,7 +93,9 @@ class Command(BaseCommand):
                         User,
                         id=int(row['author'])),
                     score=int(row['score']),
-                    pub_date=datetime.fromisoformat(row['pub_date'])
+                    pub_date=datetime.strptime(
+                        row['pub_date'], "%Y-%m-%dT%H:%M:%S.%fZ"
+                    )
                 )
 
             for row in comments:
@@ -106,7 +108,9 @@ class Command(BaseCommand):
                         User,
                         id=int(row['author'])),
                     text=row['text'],
-                    pub_date=datetime.fromisoformat(row['pub_date'])
+                    pub_date=datetime.strptime(
+                        row['pub_date'], "%Y-%m-%dT%H:%M:%S.%fZ"
+                    )
                 )
 
 
