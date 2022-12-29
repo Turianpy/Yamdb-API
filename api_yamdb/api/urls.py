@@ -3,6 +3,9 @@ from rest_framework import routers
 from reviews.views import CommentViewSet, ReviewViewSet
 
 from . import views
+from .views import APISignup
+
+app_name = 'api'
 
 v1_router = routers.DefaultRouter()
 v1_router.register('titles', views.TitleViewSet, basename='titles')
@@ -20,5 +23,6 @@ v1_router.register(
 )
 
 urlpatterns = [
+    path('v1/auth/signup/', APISignup.as_view(), name='signup'),
     path('v1/', include(v1_router.urls)),
 ]
