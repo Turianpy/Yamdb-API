@@ -18,7 +18,7 @@ class Genre(models.Model):
 
     def __str__(self) -> str:
         return self.name
-    
+
     class Meta:
         ordering = ['name']
 
@@ -77,8 +77,7 @@ class Review(models.Model):
     def validate_interval(value):
         if not 10 >= value >= 1:
             raise ValidationError(
-                ('%(value)s Score must be between 0 and 10.'),
-                params={'value': value},
+                ('%(value)s Score must be between 1 and 10.')
             )
     title = models.ForeignKey(
         Title,
@@ -91,7 +90,9 @@ class Review(models.Model):
         related_name='reviews'
     )
     text = models.TextField()
-    score = models.IntegerField(validators=[validate_interval])
+    score = models.IntegerField(
+        validators=[validate_interval]
+    )
     pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
