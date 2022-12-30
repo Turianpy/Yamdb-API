@@ -9,12 +9,13 @@ from django.contrib.auth.tokens import default_token_generator
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from reviews.models import Category, Genre, Title
-from .serializers import CategorySerializer, GenreSerializer, TitleSerializer
+from .serializers import CategorySerializer, GenreSerializer, TitleSerializer, TitleSerializerWithSlugFields
 from .viewsets import CreateListDelVS
 from .serializers import SignUpSerializer, GetTokenSerializer
 from users.models import User
 
 from .permissions import IsAdminOrReadOnly
+from rest_framework.pagination import PageNumberPagination
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -22,9 +23,16 @@ class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = TitleSerializer
     queryset = Title.objects.all()
 
-    permission_classes = [IsAdminOrReadOnly]
+    pagination_class = PageNumberPagination
+    pagination_class.page_size = 10
+    permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (DjangoFilterBackend, )
     filterset_fields = ('category__slug', 'genre__slug', 'name', 'year')
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            return TitleSerializer
+        return TitleSerializerWithSlugFields
 
 
 class GenreViewSet(CreateListDelVS):
@@ -32,7 +40,9 @@ class GenreViewSet(CreateListDelVS):
     serializer_class = GenreSerializer
     queryset = Genre.objects.all()
 
-    permission_classes = [IsAdminOrReadOnly]
+    pagination_class = PageNumberPagination
+    pagination_class.page_size = 10
+    permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
@@ -42,7 +52,9 @@ class CategoryViewSet(CreateListDelVS):
     serializer_class = CategorySerializer
     queryset = Category.objects.all()
 
-    permission_classes = [IsAdminOrReadOnly]
+    pagination_class = PageNumberPagination
+    pagination_class.page_size = 10
+    permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 

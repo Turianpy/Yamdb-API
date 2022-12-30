@@ -8,20 +8,24 @@ from users.models import User
 from .validators import validate_email, validate_username
 
 
+class GenreSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Genre
+        exclude = ['id']
+
+
+class CategorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Category
+        exclude = ['id']
+
+
 class TitleSerializer(serializers.ModelSerializer):
 
-    category = serializers.SlugRelatedField(
-        slug_field='slug',
-        queryset=Category.objects.all(),
-        required=True
-    )
-
-    genre = serializers.SlugRelatedField(
-        slug_field='slug',
-        many=True,
-        queryset=Genre.objects.all(),
-        required=True
-    )
+    category = CategorySerializer()
+    genre = GenreSerializer(many=True)
     rating = serializers.SerializerMethodField(read_only=True,)
 
     def get_rating(self, obj):
@@ -31,20 +35,22 @@ class TitleSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Title
+        extra_kwargs = {
+            'category': {'source': 'category.slug'},
+            'genre': {'source': 'genre.slug'}
+        }
 
 
-class GenreSerializer(serializers.ModelSerializer):
+class TitleSerializerWithSlugFields(TitleSerializer):
 
-    class Meta:
-        model = Genre
-        fields = '__all__'
-
-
-class CategorySerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Category
-        fields = '__all__'
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Category.objects.all()
+    )
+    genre = serializers.SlugRelatedField(
+        many=True, slug_field='slug',
+        queryset=Genre.objects.all()
+    )
 
 
 class SignUpSerializer(serializers.ModelSerializer):
