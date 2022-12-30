@@ -20,6 +20,7 @@ v1_router.register(
     CommentViewSet,
     basename='comments'
 )
+v1_router.register('users', views.UserViewSet, basename='users')
 
 urlpatterns = [
     path('v1/auth/signup/', views.send_confirmation_code),

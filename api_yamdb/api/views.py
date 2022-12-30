@@ -2,43 +2,32 @@ from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from django_filters import CharFilter, FilterSet
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, status, viewsets
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Title
 from users.models import User
 
+from .filters import TitleFilter
 from .permissions import IsAdminOrReadOnly
 from .serializers import (CategorySerializer, GenreSerializer,
                           GetTokenSerializer, SignUpSerializer,
-                          TitleSerializer, TitleSerializerWithSlugFields)
+                          TitleSerializer, TitleSerializerWithSlugFields,
+                          UserSerializer)
+from .validators import validate_username_or_email_exists
 from .viewsets import CreateListDelVS
 
 
-class TitleFilter(FilterSet):
-    category = CharFilter(
-        field_name='category__slug', lookup_expr='icontains'
-    )
-    genre = CharFilter(
-        field_name='genre__slug', lookup_expr='icontains'
-    )
-
-    class Meta:
-        model = Title
-        fields = ['category', 'genre', 'name', 'year']
-
-
 class TitleViewSet(viewsets.ModelViewSet):
-
+    """
+    Supports all request methods
+    uses a different serializer for list and retrieve
+    can filter by category and genre slugs + year and name
+    """
     serializer_class = TitleSerializer
     queryset = Title.objects.all()
-
-    pagination_class = PageNumberPagination
-    pagination_class.page_size = 10
     permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (DjangoFilterBackend, )
     filterset_class = TitleFilter
@@ -53,9 +42,6 @@ class GenreViewSet(CreateListDelVS):
 
     serializer_class = GenreSerializer
     queryset = Genre.objects.all()
-
-    pagination_class = PageNumberPagination
-    pagination_class.page_size = 10
     permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
@@ -65,9 +51,6 @@ class CategoryViewSet(CreateListDelVS):
 
     serializer_class = CategorySerializer
     queryset = Category.objects.all()
-
-    pagination_class = PageNumberPagination
-    pagination_class.page_size = 10
     permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
@@ -76,15 +59,23 @@ class CategoryViewSet(CreateListDelVS):
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def send_confirmation_code(request):
+    """
+    If both passed fields are unique creates a new user
+    otherwise fetches an existing one
+    sends code
+    """
     serializer = SignUpSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    email = serializer.validated_data.get('email')
-    username = serializer.validated_data.get('username')
-    if not User.objects.filter(email=email).exists():
-        User.objects.create(
+    email, username = serializer.validated_data.values()
+    if not User.objects.filter(email=email, username=username).exists():
+        validate_username_or_email_exists(
+            username=username,
+            email=email
+        )
+        user = User.objects.create(
             username=username, email=email
         )
-    user = User.objects.filter(email=email).first()
+    user = User.objects.get(username=username)
     confirmation_code = default_token_generator.make_token(user)
     user.confirmation_code = confirmation_code
     user.save()
@@ -95,7 +86,7 @@ def send_confirmation_code(request):
         [email]
     )
     return Response(
-        {'result': 'Код подтверждения успешно отправлен!'},
+        serializer.validated_data,
         status=status.HTTP_200_OK
     )
 
@@ -112,20 +103,63 @@ def get_tokens_for_user(user):
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def get_token(request):
+    """
+    Checks confirmation code, if its OK gives jwt token
+    """
     serializer = GetTokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    print(serializer.is_valid())
     user = get_object_or_404(User, username=request.data['username'])
-    print('got user')
     confirmation_code = request.data['confirmation_code']
-    print('got conf code')
-    print(default_token_generator.check_token(user, confirmation_code))
     if default_token_generator.check_token(user, confirmation_code):
         token = get_tokens_for_user(user)
-        print(token)
         response = {'token': str(token['access'])}
         return Response(response, status=status.HTTP_200_OK)
     return Response(
         serializer.errors,
         status=status.HTTP_400_BAD_REQUEST
     )
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    """
+    Supports all methods except PUT
+    Accessible by admin only
+    """
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = (IsAdminOrReadOnly, permissions.IsAuthenticated)
+    lookup_field = 'username'
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
+
+    def update(self, request, *args, **kwargs):
+        if request.method == 'PUT':
+            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return super().update(request, *args, **kwargs)
+
+    @action(
+        detail=False,
+        methods=['get', 'patch'],
+        permission_classes=[permissions.IsAuthenticated]
+    )
+    def me(self, request, pk=None):
+        """
+        This action method allows users to access their own profiles
+        and patch them at api/v1/users/me
+        """
+        user = request.user
+        if request.method == "GET":
+            serializer = self.get_serializer(request.user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        elif request.method == "PATCH":
+            if 'role' in request.data and not (user.is_admin or user.is_staff):
+                return Response(
+                    {"Naughty boy"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            serializer = self.get_serializer(
+                user, data=request.data, partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)

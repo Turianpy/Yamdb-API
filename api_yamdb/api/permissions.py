@@ -4,21 +4,26 @@ from rest_framework import permissions
 class IsAdminOrReadOnly(permissions.BasePermission):
 
     def has_permission(self, request, view):
-        if request.user.is_authenticated:
-            return request.user.is_admin
+        user = request.user
+        if user.is_authenticated:
+            return user.is_admin
         if request.method in permissions.SAFE_METHODS:
             return True
         return False
 
     def has_object_permission(self, request, view, obj):
+        user = request.user
         if request.method in permissions.SAFE_METHODS:
             return True
-        if request.user.is_authenticated:
-            return request.user.is_admin
+        if user.is_authenticated:
+            return user.is_admin
         return False
 
 
 class IsAdminOrModeratorOrAuthorOrReadOnly(permissions.BasePermission):
+    """
+    user only has object permission if admin, moderator or author of object
+    """
 
     def has_permission(self, request, view):
         return (request.user.is_authenticated

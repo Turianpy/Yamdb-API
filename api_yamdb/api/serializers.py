@@ -5,7 +5,7 @@ from rest_framework.exceptions import ValidationError
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
 
-from .validators import validate_email, validate_username
+from .validators import validate_username
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -23,6 +23,9 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
+    """
+    Displays genre and category as dictionaries with name and slug
+    """
 
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
@@ -38,6 +41,9 @@ class TitleSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializerWithSlugFields(TitleSerializer):
+    """
+    Serializer for unsafe methods, serializes category and genre from slugs
+    """
 
     category = serializers.SlugRelatedField(
         slug_field='slug',
@@ -50,8 +56,10 @@ class TitleSerializerWithSlugFields(TitleSerializer):
 
 
 class SignUpSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(max_length=254, allow_blank=False,
-                                   validators=[validate_email])
+    """
+    validates username against standard unicode regex and checks its not 'me'
+    """
+    email = serializers.EmailField(max_length=254, allow_blank=False)
     username = serializers.CharField(max_length=150, allow_blank=False,
                                      validators=[validate_username])
 
@@ -61,6 +69,9 @@ class SignUpSerializer(serializers.ModelSerializer):
 
 
 class GetTokenSerializer(serializers.ModelSerializer):
+    """
+    Checks confirmation code against user's hidden field
+    """
     username = serializers.CharField(
         required=True,
         max_length=150,
@@ -81,3 +92,17 @@ class GetTokenSerializer(serializers.ModelSerializer):
         if data['confirmation_code'] != user.confirmation_code:
             raise ValidationError('Неверный код подтверждения')
         return data
+
+
+class UserSerializer(serializers.ModelSerializer):
+    """
+    Serializer for UserViewSet
+    """
+
+    class Meta:
+        model = User
+        fields = [
+            'username', 'email',
+            'first_name', 'last_name',
+            'bio', 'role'
+        ]
