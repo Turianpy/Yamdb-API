@@ -14,18 +14,24 @@ year_regex = RegexValidator(
 
 class Genre(models.Model):
     name = models.CharField(max_length=256)
-    slug = models.SlugField(max_length=50)
+    slug = models.SlugField(max_length=50, unique=True)
 
     def __str__(self) -> str:
         return self.name
+    
+    class Meta:
+        ordering = ['name']
 
 
 class Category(models.Model):
     name = models.CharField(max_length=256)
-    slug = models.SlugField(max_length=50)
+    slug = models.SlugField(max_length=50, unique=True)
 
     def __str__(self) -> str:
         return self.name
+
+    class Meta:
+        ordering = ['name']
 
 
 class Title(models.Model):
