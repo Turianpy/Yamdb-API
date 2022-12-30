@@ -1,10 +1,10 @@
 from django.db.models import Avg
-from rest_framework import serializers
 from django.shortcuts import get_object_or_404
+from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
+
 from .validators import validate_email, validate_username
 
 
@@ -35,10 +35,6 @@ class TitleSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Title
-        extra_kwargs = {
-            'category': {'source': 'category.slug'},
-            'genre': {'source': 'genre.slug'}
-        }
 
 
 class TitleSerializerWithSlugFields(TitleSerializer):

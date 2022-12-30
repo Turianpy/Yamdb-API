@@ -3,9 +3,9 @@ import csv
 from datetime import datetime
 
 from django.core.management import BaseCommand
+from django.shortcuts import get_object_or_404
 from reviews.models import Category, Comment, Genre, GenreTitle, Review, Title
 from users.models import User
-from django.shortcuts import get_object_or_404
 
 
 class Command(BaseCommand):
