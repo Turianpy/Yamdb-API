@@ -2,10 +2,9 @@ from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from django_filters import CharFilter, FilterSet
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, status, viewsets
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -15,21 +14,10 @@ from users.models import User
 from .permissions import IsAdminOrReadOnly
 from .serializers import (CategorySerializer, GenreSerializer,
                           GetTokenSerializer, SignUpSerializer,
-                          TitleSerializer, TitleSerializerWithSlugFields)
+                          TitleSerializer, TitleSerializerWithSlugFields,
+                          UserSerializer)
 from .viewsets import CreateListDelVS
-
-
-class TitleFilter(FilterSet):
-    category = CharFilter(
-        field_name='category__slug', lookup_expr='icontains'
-    )
-    genre = CharFilter(
-        field_name='genre__slug', lookup_expr='icontains'
-    )
-
-    class Meta:
-        model = Title
-        fields = ['category', 'genre', 'name', 'year']
+from .filters import TitleFilter
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -129,3 +117,38 @@ def get_token(request):
         serializer.errors,
         status=status.HTTP_400_BAD_REQUEST
     )
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = (IsAdminOrReadOnly, )
+    lookup_field = 'username'
+
+    def update(self, request, *args, **kwargs):
+        if request.method == 'PUT':
+            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return super().update(request, *args, **kwargs)
+
+    @action(
+        detail=False,
+        methods=['get', 'patch'],
+        permission_classes=[permissions.IsAuthenticated]
+    )
+    def me(self, request, pk=None):
+        user = request.user
+        if request.method == "GET":
+            serializer = self.get_serializer(request.user)
+            return Response(serializer.data)
+        elif request.method == "PATCH":
+            if 'role' in request.data and not (user.is_admin or user.is_staff):
+                return Response(
+                    {"Naughty boy"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            serializer = self.get_serializer(
+                user, data=request.data, partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
