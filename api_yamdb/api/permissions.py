@@ -6,7 +6,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
         if user.is_authenticated:
-            return user.is_admin or user.is_staff
+            return user.is_admin
         if request.method in permissions.SAFE_METHODS:
             return True
         return False
@@ -31,5 +31,4 @@ class IsAdminOrModeratorOrAuthorOrReadOnly(permissions.BasePermission):
             return True
         return (request.user.is_admin
                 or request.user.is_moderator
-                or request.user.is_staff
                 or obj.author == request.user)

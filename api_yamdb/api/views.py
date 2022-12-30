@@ -5,7 +5,6 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import api_view, permission_classes, action
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Title
@@ -24,9 +23,6 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     serializer_class = TitleSerializer
     queryset = Title.objects.all()
-
-    pagination_class = PageNumberPagination
-    pagination_class.page_size = 10
     permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (DjangoFilterBackend, )
     filterset_class = TitleFilter
@@ -41,9 +37,6 @@ class GenreViewSet(CreateListDelVS):
 
     serializer_class = GenreSerializer
     queryset = Genre.objects.all()
-
-    pagination_class = PageNumberPagination
-    pagination_class.page_size = 10
     permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
@@ -53,9 +46,6 @@ class CategoryViewSet(CreateListDelVS):
 
     serializer_class = CategorySerializer
     queryset = Category.objects.all()
-
-    pagination_class = PageNumberPagination
-    pagination_class.page_size = 10
     permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
@@ -83,7 +73,7 @@ def send_confirmation_code(request):
         [email]
     )
     return Response(
-        {'result': 'Код подтверждения успешно отправлен!'},
+        serializer.validated_data,
         status=status.HTTP_200_OK
     )
 
@@ -122,7 +112,7 @@ def get_token(request):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsAdminOrReadOnly, )
+    permission_classes = (IsAdminOrReadOnly, permissions.IsAuthenticated)
     lookup_field = 'username'
 
     def update(self, request, *args, **kwargs):

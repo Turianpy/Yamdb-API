@@ -28,7 +28,7 @@ class User(AbstractUser):
     @property
     def is_admin(self):
         """Is the user a member of staff?."""
-        return self.role == User.ADMIN
+        return (self.role == User.ADMIN) or self.is_staff
 
     @property
     def is_user(self):

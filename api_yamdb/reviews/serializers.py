@@ -17,7 +17,7 @@ class ReviewSerializer(serializers.ModelSerializer):
             if Review.objects.filter(title__id=title_id,
                                      author=author).exists():
                 raise serializers.ValidationError(
-                    'You can leave only one review!'
+                    'You can write only one review!'
                 )
         return data
 
