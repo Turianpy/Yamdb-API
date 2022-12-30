@@ -17,6 +17,7 @@ from .serializers import (CategorySerializer, GenreSerializer,
                           UserSerializer)
 from .viewsets import CreateListDelVS
 from .filters import TitleFilter
+from .validators import validate_username_or_email_exists
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -56,13 +57,16 @@ class CategoryViewSet(CreateListDelVS):
 def send_confirmation_code(request):
     serializer = SignUpSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    email = serializer.validated_data.get('email')
-    username = serializer.validated_data.get('username')
+    email, username = serializer.validated_data.values()
     if not User.objects.filter(email=email).exists():
-        User.objects.create(
+        validate_username_or_email_exists(
+            username=username,
+            email=email
+        )
+        user = User.objects.create(
             username=username, email=email
         )
-    user = User.objects.filter(email=email).first()
+    user = get_object_or_404(User, email=email)
     confirmation_code = default_token_generator.make_token(user)
     user.confirmation_code = confirmation_code
     user.save()

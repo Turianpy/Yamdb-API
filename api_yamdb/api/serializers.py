@@ -5,7 +5,7 @@ from rest_framework.exceptions import ValidationError
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
 
-from .validators import validate_email, validate_username
+from .validators import validate_username
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -50,8 +50,7 @@ class TitleSerializerWithSlugFields(TitleSerializer):
 
 
 class SignUpSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(max_length=254, allow_blank=False,
-                                   validators=[validate_email])
+    email = serializers.EmailField(max_length=254, allow_blank=False)
     username = serializers.CharField(max_length=150, allow_blank=False,
                                      validators=[validate_username])
 
