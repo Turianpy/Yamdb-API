@@ -114,6 +114,8 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = (IsAdminOrReadOnly, permissions.IsAuthenticated)
     lookup_field = 'username'
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
 
     def update(self, request, *args, **kwargs):
         if request.method == 'PUT':
@@ -129,7 +131,7 @@ class UserViewSet(viewsets.ModelViewSet):
         user = request.user
         if request.method == "GET":
             serializer = self.get_serializer(request.user)
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         elif request.method == "PATCH":
             if 'role' in request.data and not (user.is_admin or user.is_staff):
                 return Response(
