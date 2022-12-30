@@ -3,6 +3,11 @@ from django.db import models
 
 
 class User(AbstractUser):
+    """
+    Custom user model
+    role field value gives extra permissions on the API
+    staff is always admin
+    """
     USER = 'user'
     ADMIN = 'admin'
     MODERATOR = 'moderator'

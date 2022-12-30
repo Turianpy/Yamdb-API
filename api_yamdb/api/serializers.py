@@ -23,6 +23,9 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
+    """
+    Displays genre and category as dictionaries with name and slug
+    """
 
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
@@ -38,6 +41,9 @@ class TitleSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializerWithSlugFields(TitleSerializer):
+    """
+    Serializer for unsafe methods, serializes category and genre from slugs
+    """
 
     category = serializers.SlugRelatedField(
         slug_field='slug',
@@ -50,6 +56,9 @@ class TitleSerializerWithSlugFields(TitleSerializer):
 
 
 class SignUpSerializer(serializers.ModelSerializer):
+    """
+    validates username against standard unicode regex and checks its not 'me'
+    """
     email = serializers.EmailField(max_length=254, allow_blank=False)
     username = serializers.CharField(max_length=150, allow_blank=False,
                                      validators=[validate_username])
@@ -60,6 +69,9 @@ class SignUpSerializer(serializers.ModelSerializer):
 
 
 class GetTokenSerializer(serializers.ModelSerializer):
+    """
+    Checks confirmation code against user's hidden field
+    """
     username = serializers.CharField(
         required=True,
         max_length=150,
@@ -83,6 +95,9 @@ class GetTokenSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """
+    Serializer for UserViewSet
+    """
 
     class Meta:
         model = User

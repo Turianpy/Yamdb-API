@@ -3,6 +3,12 @@ from reviews.models import Title
 
 
 class TitleFilter(f.FilterSet):
+    """
+    Custom filter
+    enables filtering by related model's slug field
+    without double underscore in the url
+    e.g. ?genre=drama
+    """
     category = f.CharFilter(
         field_name='category__slug', lookup_expr='icontains'
     )

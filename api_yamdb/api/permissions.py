@@ -21,6 +21,9 @@ class IsAdminOrReadOnly(permissions.BasePermission):
 
 
 class IsAdminOrModeratorOrAuthorOrReadOnly(permissions.BasePermission):
+    """
+    user only has object permission if admin, moderator or author of object
+    """
 
     def has_permission(self, request, view):
         return (request.user.is_authenticated

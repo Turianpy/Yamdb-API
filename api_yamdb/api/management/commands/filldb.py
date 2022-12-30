@@ -9,6 +9,9 @@ from users.models import User
 
 
 class Command(BaseCommand):
+    """
+    Reads csv files, creates objects from data, very basic
+    """
     def handle(self, *args, **options):
 
         p = 'static/data/'

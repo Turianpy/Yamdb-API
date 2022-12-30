@@ -74,8 +74,8 @@ class GenreTitle(models.Model):
 
 
 class Review(models.Model):
-    def validate_interval(value):
-        if not 10 >= value >= 1:
+    def validate_interval(self):
+        if not 10 >= self >= 1:
             raise ValidationError(
                 ('%(value)s Score must be between 1 and 10.')
             )

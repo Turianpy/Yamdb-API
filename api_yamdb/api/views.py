@@ -4,24 +4,28 @@ from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, status, viewsets
-from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Title
 from users.models import User
 
+from .filters import TitleFilter
 from .permissions import IsAdminOrReadOnly
 from .serializers import (CategorySerializer, GenreSerializer,
                           GetTokenSerializer, SignUpSerializer,
                           TitleSerializer, TitleSerializerWithSlugFields,
                           UserSerializer)
-from .viewsets import CreateListDelVS
-from .filters import TitleFilter
 from .validators import validate_username_or_email_exists
+from .viewsets import CreateListDelVS
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-
+    """
+    Supports all request methods
+    uses a different serializer for list and retrieve
+    can filter by category and genre slugs + year and name
+    """
     serializer_class = TitleSerializer
     queryset = Title.objects.all()
     permission_classes = (IsAdminOrReadOnly, )
@@ -55,6 +59,11 @@ class CategoryViewSet(CreateListDelVS):
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def send_confirmation_code(request):
+    """
+    If both passed fields are unique creates a new user
+    otherwise fetches an existing one
+    sends code
+    """
     serializer = SignUpSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     email, username = serializer.validated_data.values()
@@ -66,10 +75,7 @@ def send_confirmation_code(request):
         user = User.objects.create(
             username=username, email=email
         )
-    print('didnt pass validation, user not created')
     user = User.objects.get(username=username)
-    print('should print none')
-    print(user)
     confirmation_code = default_token_generator.make_token(user)
     user.confirmation_code = confirmation_code
     user.save()
@@ -97,13 +103,15 @@ def get_tokens_for_user(user):
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def get_token(request):
+    """
+    Checks confirmation code, if its OK gives jwt token
+    """
     serializer = GetTokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = get_object_or_404(User, username=request.data['username'])
     confirmation_code = request.data['confirmation_code']
     if default_token_generator.check_token(user, confirmation_code):
         token = get_tokens_for_user(user)
-        print(token)
         response = {'token': str(token['access'])}
         return Response(response, status=status.HTTP_200_OK)
     return Response(
@@ -113,19 +121,16 @@ def get_token(request):
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """
+    Supports all methods except PUT
+    Accessible by admin only
+    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsAdminOrReadOnly, permissions.IsAuthenticated)
     lookup_field = 'username'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
-
-    def perform_create(self, serializer):
-        validate_username_or_email_exists(
-            username=serializer.validated_data['username'],
-            email=serializer.validated_data['email']
-        )
-        return super().perform_create(serializer)
 
     def update(self, request, *args, **kwargs):
         if request.method == 'PUT':
@@ -138,6 +143,10 @@ class UserViewSet(viewsets.ModelViewSet):
         permission_classes=[permissions.IsAuthenticated]
     )
     def me(self, request, pk=None):
+        """
+        This action method allows users to access their own profiles
+        and patch them at api/v1/users/me
+        """
         user = request.user
         if request.method == "GET":
             serializer = self.get_serializer(request.user)
