@@ -58,7 +58,7 @@ def send_confirmation_code(request):
     serializer = SignUpSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     email, username = serializer.validated_data.values()
-    if not User.objects.filter(email=email).exists():
+    if not User.objects.filter(email=email, username=username).exists():
         validate_username_or_email_exists(
             username=username,
             email=email
@@ -66,7 +66,10 @@ def send_confirmation_code(request):
         user = User.objects.create(
             username=username, email=email
         )
-    user = get_object_or_404(User, email=email)
+    print('didnt pass validation, user not created')
+    user = User.objects.get(username=username)
+    print('should print none')
+    print(user)
     confirmation_code = default_token_generator.make_token(user)
     user.confirmation_code = confirmation_code
     user.save()
@@ -96,12 +99,8 @@ def get_tokens_for_user(user):
 def get_token(request):
     serializer = GetTokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    print(serializer.is_valid())
     user = get_object_or_404(User, username=request.data['username'])
-    print('got user')
     confirmation_code = request.data['confirmation_code']
-    print('got conf code')
-    print(default_token_generator.check_token(user, confirmation_code))
     if default_token_generator.check_token(user, confirmation_code):
         token = get_tokens_for_user(user)
         print(token)
@@ -120,6 +119,13 @@ class UserViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
+
+    def perform_create(self, serializer):
+        validate_username_or_email_exists(
+            username=serializer.validated_data['username'],
+            email=serializer.validated_data['email']
+        )
+        return super().perform_create(serializer)
 
     def update(self, request, *args, **kwargs):
         if request.method == 'PUT':
