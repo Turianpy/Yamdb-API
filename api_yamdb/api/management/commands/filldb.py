@@ -4,7 +4,7 @@ from datetime import datetime
 
 from django.core.management import BaseCommand
 from django.shortcuts import get_object_or_404
-from reviews.models import Category, Comment, Genre, GenreTitle, Review, Title
+from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
 
 
@@ -65,17 +65,15 @@ class Command(BaseCommand):
                 )
 
             for row in genre_title:
-                GenreTitle.objects.get_or_create(
-                    id=int(row['id']),
-                    title=get_object_or_404(
-                        Title,
-                        id=int(row['title_id'])),
-                    genre=get_object_or_404(
-                        Genre,
-                        id=int(row['genre_id'])
-                    )
+                title = get_object_or_404(
+                    Title,
+                    id=int(row['title_id'])
                 )
-
+                genre = get_object_or_404(
+                    Genre,
+                    id=int(row['genre_id'])
+                )
+                title.genre.add(genre)
             for row in users:
                 User.objects.get_or_create(
                     id=int(row['id']),
@@ -115,12 +113,3 @@ class Command(BaseCommand):
                         row['pub_date'], "%Y-%m-%dT%H:%M:%S.%fZ"
                     )
                 )
-
-
-def main():
-    command = Command()
-    command.handle()
-
-
-if __name__ == '__main__':
-    main()

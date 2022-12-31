@@ -1,13 +1,15 @@
+from api.permissions import IsAdminOrModeratorOrAuthorOrReadOnly
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
-from reviews.models import Category, Genre, Title
+from reviews.models import Category, Genre, Review, Title
 from users.models import User
 
 from .filters import TitleFilter
@@ -15,7 +17,9 @@ from .permissions import IsAdminOrReadOnly
 from .serializers import (CategorySerializer, GenreSerializer,
                           GetTokenSerializer, SignUpSerializer,
                           TitleSerializer, TitleSerializerWithSlugFields,
-                          UserSerializer)
+                          UserSerializer, CommentSerializer,
+                          ReviewSerializer)
+from .utils import get_tokens_for_user
 from .validators import validate_username_or_email_exists
 from .viewsets import CreateListDelVS
 
@@ -31,6 +35,13 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (DjangoFilterBackend, )
     filterset_class = TitleFilter
+
+    def get_serializer_context(self):
+        ratings = Review.objects.values('title_id').annotate(
+            Avg('score')).order_by()
+        context = super().get_serializer_context()
+        context['ratings'] = ratings
+        return context
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -54,6 +65,46 @@ class CategoryViewSet(CreateListDelVS):
     permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+    permission_classes = (IsAdminOrModeratorOrAuthorOrReadOnly,)
+    pagination_class = PageNumberPagination
+    pagination_class.page_size = 10
+
+    def get_title(self):
+        return get_object_or_404(
+            Title, pk=self.kwargs.get('title_id')
+        )
+
+    def perform_create(self, serializer):
+        title = self.get_title()
+        serializer.save(author=self.request.user, title=title)
+
+    def get_queryset(self):
+        return self.get_title().reviews.all()
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
+    permission_classes = (IsAdminOrModeratorOrAuthorOrReadOnly,)
+    pagination_class = PageNumberPagination
+    pagination_class.page_size = 10
+
+    def get_review(self):
+        return get_object_or_404(
+            Review,
+            id=self.kwargs.get('review_id'),
+            title=self.kwargs.get('title_id')
+        )
+
+    def perform_create(self, serializer):
+        review = self.get_review()
+        serializer.save(author=self.request.user, review=review)
+
+    def get_queryset(self):
+        return self.get_review().сomments.all()
 
 
 @api_view(['POST'])
@@ -91,15 +142,6 @@ def send_confirmation_code(request):
     )
 
 
-def get_tokens_for_user(user):
-    refresh = RefreshToken.for_user(user)
-
-    return {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
-    }
-
-
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def get_token(request):
@@ -108,7 +150,9 @@ def get_token(request):
     """
     serializer = GetTokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    user = get_object_or_404(User, username=request.data['username'])
+    user = get_object_or_404(
+        User, username=serializer.validated_data['username']
+    )
     confirmation_code = request.data['confirmation_code']
     if default_token_generator.check_token(user, confirmation_code):
         token = get_tokens_for_user(user)

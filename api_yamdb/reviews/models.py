@@ -1,37 +1,29 @@
-from datetime import datetime
-
-from django.core.validators import RegexValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
-from django.db.models import Avg
-from rest_framework.validators import ValidationError
 from users.models import User
-
-year_regex = RegexValidator(
-    r'^\d{4}$',
-    'Enter a valid year. The format should be YYYY.'
-)
+from .validators import year_regex, year_validator
 
 
 class Genre(models.Model):
     name = models.CharField(max_length=256)
     slug = models.SlugField(max_length=50, unique=True)
 
-    def __str__(self) -> str:
-        return self.name
-
     class Meta:
         ordering = ['name']
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Category(models.Model):
     name = models.CharField(max_length=256)
     slug = models.SlugField(max_length=50, unique=True)
 
-    def __str__(self) -> str:
-        return self.name
-
     class Meta:
         ordering = ['name']
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Title(models.Model):
@@ -39,46 +31,21 @@ class Title(models.Model):
         Category, related_name='titles',
         on_delete=models.SET_NULL, null=True
     )
-    genre = models.ManyToManyField(Genre, through='GenreTitle')
+    genre = models.ManyToManyField(
+        Genre,
+        related_name='titles',
+    )
     name = models.CharField(max_length=256)
-    year = models.PositiveSmallIntegerField(validators=[year_regex, ])
+    year = models.PositiveSmallIntegerField(
+        validators=[year_regex, year_validator]
+    )
     description = models.CharField(max_length=1000)
-    rating = models.PositiveSmallIntegerField(null=True, blank=True)
-
-    @property
-    def get_rating(self):
-        ratings = self.reviews.all()
-        return ratings.aggregate(Avg('score'))['score__avg']
-
-    def save(self, *args, **kwargs):
-        self.rating = self.get_rating
-        return super(Title, self).save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f'{self.category.name} {self.name}'
 
-    def clean(self):
-        if self.year > datetime.now().year:
-            raise ValidationError("Has to be current or past year.")
-        return super().clean()
-
-
-class GenreTitle(models.Model):
-
-    title = models.ForeignKey(
-        Title, on_delete=models.CASCADE,
-        related_name='genres')
-    genre = models.ForeignKey(
-        Genre, on_delete=models.CASCADE,
-        related_name='titles')
-
 
 class Review(models.Model):
-    def validate_interval(self):
-        if not 10 >= self >= 1:
-            raise ValidationError(
-                ('%(value)s Score must be between 1 and 10.')
-            )
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
@@ -91,7 +58,7 @@ class Review(models.Model):
     )
     text = models.TextField()
     score = models.IntegerField(
-        validators=[validate_interval]
+        validators=[MinValueValidator(1), MaxValueValidator(10)]
     )
     pub_date = models.DateTimeField(auto_now_add=True)
 
