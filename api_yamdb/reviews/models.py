@@ -5,22 +5,32 @@ from .validators import year_regex, year_validator
 
 
 class Genre(models.Model):
-    name = models.CharField(max_length=256)
-    slug = models.SlugField(max_length=50, unique=True)
+    name = models.CharField(max_length=256, verbose_name='Genre name')
+    slug = models.SlugField(
+        max_length=50,
+        unique=True,
+        verbose_name='Slug')
 
     class Meta:
         ordering = ['name']
+        verbose_name = 'Genre'
+        verbose_name_plural = 'Genres'
 
     def __str__(self) -> str:
         return self.name
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=256)
-    slug = models.SlugField(max_length=50, unique=True)
+    name = models.CharField(max_length=256, verbose_name='Category name')
+    slug = models.SlugField(
+        max_length=50,
+        unique=True,
+        verbose_name='Slug')
 
     class Meta:
         ordering = ['name']
+        verbose_name = 'Category'
+        verbose_name_plural = 'Categories'
 
     def __str__(self) -> str:
         return self.name
@@ -35,11 +45,17 @@ class Title(models.Model):
         Genre,
         related_name='titles',
     )
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=256, verbose_name='Title name')
     year = models.PositiveSmallIntegerField(
-        validators=[year_regex, year_validator]
+        validators=[year_regex, year_validator],
+        verbose_name='Release year'
     )
-    description = models.CharField(max_length=1000)
+    description = models.CharField(max_length=1000, verbose_name='Description')
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Title'
+        verbose_name_plural = 'Titles'
 
     def __str__(self) -> str:
         return f'{self.category.name} {self.name}'
