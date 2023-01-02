@@ -1,8 +1,7 @@
-from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from reviews.models import Category, Genre, Review, Title
+from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
 
 from .validators import validate_username
@@ -32,8 +31,12 @@ class TitleSerializer(serializers.ModelSerializer):
     rating = serializers.SerializerMethodField(read_only=True,)
 
     def get_rating(self, obj):
-        ratings = Review.objects.filter(title_id=obj.id)
-        return ratings.aggregate(Avg('score'))['score__avg']
+        ratings = self.context.get('ratings')
+        rating = next(
+            (r['score__avg'] for r in ratings if r['title_id'] == obj.id),
+            None
+        )
+        return rating
 
     class Meta:
         fields = '__all__'
@@ -106,3 +109,40 @@ class UserSerializer(serializers.ModelSerializer):
             'first_name', 'last_name',
             'bio', 'role'
         ]
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='username',
+        default=serializers.CurrentUserDefault()
+    )
+    title = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    def validate(self, data):
+        title_id = self.context['view'].kwargs['title_id']
+        author = self.context['request'].user
+        if not self.context['request'].method == 'PATCH':
+            if Review.objects.filter(title__id=title_id,
+                                     author=author).exists():
+                raise serializers.ValidationError(
+                    'You can write only one review!'
+                )
+        return data
+
+    class Meta:
+        fields = '__all__'
+        model = Review
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='username',
+        default=serializers.CurrentUserDefault()
+    )
+    review = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        fields = '__all__'
+        model = Comment
