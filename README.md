@@ -112,3 +112,84 @@ http://127.0.0.1:8000/admin
 
 Доступно в документации по адресу: http://127.0.0.1:8000/redoc/
 
+# Примеры запросов:
+
+### Регистрация нового пользователя
+
+#### url:
+```
+/api/v1/auth/signup/
+```
+
+JSON в запросе на добавление:
+
+```json
+{
+    "email": "string",
+    "username": "string"
+}
+```
+
+Ответ JSON:
+```json
+{
+    "email": "string",
+    "username": "string"
+}
+```
+
+### Получение списка всех категорий
+
+Права доступа: Доступно без токена
+
+#### url:
+```
+/api/v1/categories/
+```
+
+Ответ JSON:
+```json
+[
+    {
+        "count": 0,
+        "next": "string",
+        "previous": "string",
+        "results": [
+            {
+                "name": "string",
+                "slug": "string"
+            }
+        ]
+    }
+]
+```
+
+### Добавление комментария к отзыву
+
+Права доступа: user, moderator, admin
+
+#### url:
+```
+/api/v1/titles/{title_id}/reviews/{review_id}/comments/
+```
+
+структура JSON в запросе на добавление:
+```json
+{
+    "text": "string"
+}
+```
+
+В ответе:
+```json
+{
+    "id": 0,
+    "text": "string",
+    "author": "string",
+    "pub_date": "2019-08-24T14:15:22Z"
+}
+```
+response status code 201
+
+#### Возможные коды ошибок: 
+400 Отсутствует обязательное поле или оно некорректно
