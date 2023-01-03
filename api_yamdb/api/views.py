@@ -7,7 +7,6 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
@@ -68,10 +67,12 @@ class CategoryViewSet(CreateListDelVS):
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
+    """
+    Supports all request methods except PUT.
+    Access rights: administrator, moderator, author or read-only.
+    """
     serializer_class = ReviewSerializer
     permission_classes = (IsAdminOrModeratorOrAuthorOrReadOnly,)
-    pagination_class = PageNumberPagination
-    pagination_class.page_size = 10
 
     def get_title(self):
         return get_object_or_404(
@@ -87,10 +88,12 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
+    """
+    Supports all request methods except PUT.
+    Access rights: administrator, moderator, author or read-only.
+    """
     serializer_class = CommentSerializer
     permission_classes = (IsAdminOrModeratorOrAuthorOrReadOnly,)
-    pagination_class = PageNumberPagination
-    pagination_class.page_size = 10
 
     def get_review(self):
         return get_object_or_404(

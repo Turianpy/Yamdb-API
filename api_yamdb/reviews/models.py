@@ -65,21 +65,28 @@ class Review(models.Model):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name='reviews'
+        related_name='reviews',
+        verbose_name='Review title'
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='reviews'
+        related_name='reviews',
+        verbose_name='Review author'
     )
-    text = models.TextField()
+    text = models.TextField(verbose_name='Text')
     score = models.IntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(10)]
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        verbose_name='Score'
     )
-    pub_date = models.DateTimeField(auto_now_add=True)
+    pub_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Review date')
 
     class Meta:
         ordering = ['pub_date']
+        verbose_name = 'Review'
+        verbose_name_plural = 'Reviews'
         constraints = [
             models.UniqueConstraint(
                 fields=['title', 'author'],
@@ -95,17 +102,23 @@ class Comment(models.Model):
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
-        related_name='сomments'
+        related_name='сomments',
+        verbose_name='Comment review'
     )
-    text = models.TextField()
+    text = models.TextField(verbose_name='Text')
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='сomments'
+        related_name='сomments',
+        verbose_name='Comment author'
     )
-    pub_date = models.DateTimeField(auto_now_add=True)
+    pub_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Comment date')
 
     class Meta:
+        verbose_name = 'Comment'
+        verbose_name_plural = 'Comments'
         ordering = ['pub_date']
 
     def __str__(self):

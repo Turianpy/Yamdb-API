@@ -112,6 +112,9 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    """
+    Checks the author to write only one review for one title.
+    """
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username',
@@ -136,6 +139,9 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    """
+    Serializer for CommentViewSet.
+    """
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username',
