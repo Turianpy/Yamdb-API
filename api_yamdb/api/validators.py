@@ -7,11 +7,11 @@ username_pattern = re.compile(r'^[\w.@+-]+\Z')
 
 
 def validate_username(value):
-    if value == 'me':
+    if value.casefold() == 'me':
         raise ValidationError('Недопустимое имя пользователя')
     if not username_pattern.match(value):
         raise ValidationError(
-            'Cringe username try again'
+            'Create a normal username please'
         )
 
 

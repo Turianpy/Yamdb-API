@@ -11,6 +11,10 @@ class CreateListDelVS(
     lookup_field = 'slug'
 
     def create(self, request, *args, **kwargs):
+        """
+        Shows a paginated list of all objects upon creation
+        instead of default detail view
+        """
         super().create(request, *args, **kwargs)
         paginated_response = self.list(request, *args, **kwargs)
         return Response(
