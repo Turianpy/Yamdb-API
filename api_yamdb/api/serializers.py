@@ -29,7 +29,7 @@ class TitleSerializer(serializers.ModelSerializer):
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
     rating = serializers.FloatField(required=False)
-    #wanted to do DecimalField, but one of the tests is testing hard equality to 4, which 4.0 fails :^)
+    # DecimalField fails 4 == 4.0 test
 
     class Meta:
         fields = '__all__'
