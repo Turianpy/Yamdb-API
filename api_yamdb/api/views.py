@@ -8,16 +8,15 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
+
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
-
 from .filters import TitleFilter
 from .permissions import IsAdminOrReadOnly
-from .serializers import (CategorySerializer, GenreSerializer,
-                          GetTokenSerializer, SignUpSerializer,
-                          TitleSerializer, TitleSerializerWithSlugFields,
-                          UserSerializer, CommentSerializer,
-                          ReviewSerializer)
+from .serializers import (CategorySerializer, CommentSerializer,
+                          GenreSerializer, GetTokenSerializer,
+                          ReviewSerializer, SignUpSerializer, TitleSerializer,
+                          TitleSerializerWithSlugFields, UserSerializer)
 from .utils import get_tokens_for_user
 from .validators import validate_username_or_email_exists
 from .viewsets import CreateListDelVS
@@ -30,17 +29,10 @@ class TitleViewSet(viewsets.ModelViewSet):
     can filter by category and genre slugs + year and name
     """
     serializer_class = TitleSerializer
-    queryset = Title.objects.all()
+    queryset = Title.objects.all().annotate(rating=Avg('reviews__score'))
     permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (DjangoFilterBackend, )
     filterset_class = TitleFilter
-
-    def get_serializer_context(self):
-        ratings = Review.objects.values('title_id').annotate(
-            Avg('score')).order_by()
-        context = super().get_serializer_context()
-        context['ratings'] = ratings
-        return context
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -156,7 +148,7 @@ def get_token(request):
     user = get_object_or_404(
         User, username=serializer.validated_data['username']
     )
-    confirmation_code = request.data['confirmation_code']
+    confirmation_code = serializer.validated_data['confirmation_code']
     if default_token_generator.check_token(user, confirmation_code):
         token = get_tokens_for_user(user)
         response = {'token': str(token['access'])}

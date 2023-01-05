@@ -1,9 +1,9 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
-
 from .validators import validate_username
 
 
@@ -28,15 +28,8 @@ class TitleSerializer(serializers.ModelSerializer):
 
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
-    rating = serializers.SerializerMethodField(read_only=True,)
-
-    def get_rating(self, obj):
-        ratings = self.context.get('ratings')
-        rating = next(
-            (r['score__avg'] for r in ratings if r['title_id'] == obj.id),
-            None
-        )
-        return rating
+    rating = serializers.FloatField(required=False)
+    #wanted to do DecimalField, but one of the tests is testing hard equality to 4, which 4.0 fails :^)
 
     class Meta:
         fields = '__all__'
