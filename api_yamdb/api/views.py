@@ -29,17 +29,10 @@ class TitleViewSet(viewsets.ModelViewSet):
     can filter by category and genre slugs + year and name
     """
     serializer_class = TitleSerializer
-    queryset = Title.objects.all()
+    queryset = Title.objects.all().annotate(rating=Avg('reviews__score'))
     permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (DjangoFilterBackend, )
     filterset_class = TitleFilter
-
-    def get_serializer_context(self):
-        ratings = Review.objects.values('title_id').annotate(
-            Avg('score')).order_by()
-        context = super().get_serializer_context()
-        context['ratings'] = ratings
-        return context
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:

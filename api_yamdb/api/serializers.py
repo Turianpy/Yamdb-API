@@ -28,15 +28,8 @@ class TitleSerializer(serializers.ModelSerializer):
 
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
-    rating = serializers.SerializerMethodField(read_only=True,)
-
-    def get_rating(self, obj):
-        ratings = self.context.get('ratings')
-        rating = next(
-            (r['score__avg'] for r in ratings if r['title_id'] == obj.id),
-            None
-        )
-        return rating
+    rating = serializers.FloatField(required=False)
+    #wanted to do DecimalField, but one of the tests is testing hard equality to 4, which 4.0 fails :^)
 
     class Meta:
         fields = '__all__'
