@@ -29,7 +29,6 @@ class TitleSerializer(serializers.ModelSerializer):
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
     rating = serializers.FloatField(required=False)
-    # DecimalField fails 4 == 4.0 test
 
     class Meta:
         fields = '__all__'
